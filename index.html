@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#06140b" />
+  <title>ADA.IA — Assistente Virtual</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+
+<body>
+  <!-- Fundo Matrix -->
+  <canvas id="matrix"></canvas>
+  <div class="scanlines" aria-hidden="true"></div>
+  <div class="vignette" aria-hidden="true"></div>
+
+  <!-- Topbar -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand__title">ADA.IA</div>
+      <div class="brand__subtitle">Assistente Virtual Futurista</div>
+    </div>
+
+    <div class="topbar__actions">
+      <button class="btn btn--ghost" id="btnConfig" type="button" title="Configurações (voz e IA)">
+        Configurações
+      </button>
+      <button class="btn btn--danger" id="btnClear" type="button" title="Limpar conversas">
+        Limpar conversas
+      </button>
+      <button class="btn btn--warn" id="btnExit" type="button" title="Sair">
+        Sair
+      </button>
+    </div>
+  </header>
+
+  <!-- Layout principal -->
+  <main class="layout">
+    <!-- Painel da Assistente -->
+    <section class="panel panel--assistant" aria-label="Painel da assistente">
+      <div class="assistantCard">
+        <div class="assistantHalo" aria-hidden="true"></div>
+
+        <div class="assistantFrame" id="assistantFrame">
+          <!-- Troque o arquivo em assets/assistant.jpg -->
+          <img
+            id="assistantImg"
+            src="./assets/assistant.jpg"
+            alt="Assistente ADA.IA"
+            draggable="false"
+          />
+          <div class="assistantGlow" aria-hidden="true"></div>
+        </div>
+
+        <!-- Texto 3D ADA.IA (aparece a cada fala) -->
+        <div class="ada3d" id="ada3d" aria-hidden="true">
+          <span class="ada3d__text">ADA.IA</span>
+        </div>
+
+        <div class="assistantStatus">
+          <div class="dot" id="statusDot" aria-hidden="true"></div>
+          <div class="assistantStatus__text" id="statusText">Pronta para ajudar</div>
+        </div>
+
+        <div class="assistantHint">
+          Dica: use “Configurações” para ativar IA via API (opcional) e escolher a voz pt‑BR.
+        </div>
+      </div>
+    </section>
+
+    <!-- Chat -->
+    <section class="panel panel--chat" aria-label="Chat">
+      <div class="chatHeader">
+        <div class="chatHeader__title">Conversa</div>
+        <div class="chatHeader__meta" id="chatMeta">pt-BR • voz masculina (quando disponível)</div>
+      </div>
+
+      <div class="chat" id="chat" role="log" aria-live="polite" aria-relevant="additions"></div>
+
+      <form class="composer" id="composer" autocomplete="off">
+        <input
+          class="composer__input"
+          id="userInput"
+          type="text"
+          placeholder="Digite sua pergunta…"
+          aria-label="Digite sua pergunta"
+          required
+        />
+        <button class="btn btn--primary composer__send" type="submit" id="btnSend">
+          Enviar
+        </button>
+      </form>
+    </section>
+  </main>
+
+  <!-- Modal Configurações -->
+  <dialog class="modal" id="configModal">
+    <form method="dialog" class="modal__content">
+      <div class="modal__header">
+        <div>
+          <div class="modal__title">Configurações</div>
+          <div class="modal__subtitle">Voz (TTS) e IA (opcional)</div>
+        </div>
+        <button class="btn btn--ghost" value="cancel" type="submit">Fechar</button>
+      </div>
+
+      <div class="modal__body">
+        <div class="field">
+          <label class="label" for="voiceSelect">Voz (Web Speech API)</label>
+          <select id="voiceSelect" class="select"></select>
+          <div class="help">
+            Se não houver voz pt‑BR masculina instalada no dispositivo, o navegador usará a mais próxima disponível.
+          </div>
+          <div class="row">
+            <button class="btn btn--ghost" id="btnTestVoice" type="button">Testar voz</button>
+            <button class="btn btn--ghost" id="btnReloadVoices" type="button">Recarregar vozes</button>
+          </div>
+        </div>
+
+        <hr class="hr" />
+
+        <div class="field">
+          <label class="label" for="modeSelect">Modo de Resposta</label>
+          <select id="modeSelect" class="select">
+            <option value="local">Local (sem API) — respostas básicas e educadas</option>
+            <option value="openai">API OpenAI-compatível (recomendado com proxy)</option>
+          </select>
+          <div class="help">
+            GitHub Pages é front-end público. Não coloque sua chave diretamente aqui.
+            Use um proxy (Cloudflare Worker/Netlify Function) para proteger a chave.
+          </div>
+        </div>
+
+        <div class="field" id="openaiFields">
+          <label class="label" for="apiBase">URL do Proxy / Endpoint</label>
+          <input id="apiBase" class="input" type="url" placeholder="Ex.: https://seu-proxy.exemplo.com/v1/chat/completions" />
+          <div class="help">De preferência, um endpoint que aceite o formato OpenAI Chat Completions.</div>
+
+          <label class="label" for="apiKey">API Key (opcional no browser)</label>
+          <input id="apiKey" class="input" type="password" placeholder="NÃO recomendado no GitHub Pages" />
+          <div class="help">Se seu proxy já injeta a chave no servidor, deixe este campo vazio.</div>
+
+          <label class="label" for="modelName">Modelo</label>
+          <input id="modelName" class="input" type="text" value="gpt-4o-mini" />
+        </div>
+
+        <hr class="hr" />
+
+        <div class="field">
+          <label class="label" for="persona">Persona do Assistente</label>
+          <textarea id="persona" class="textarea" rows="5"
+            placeholder="Defina o estilo do ADA.IA...">Você é ADA.IA, um assistente virtual amigável, objetivo e prestativo. Responda sempre em português do Brasil, com tom masculino amigável, e faça perguntas quando faltar contexto. Evite respostas longas demais.</textarea>
+        </div>
+      </div>
+
+      <div class="modal__footer">
+        <button class="btn btn--primary" id="btnSaveConfig" type="button">Salvar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <footer class="footer">
+    <div class="footer__line">Todos os direitos reservados a <strong>MANDROIDAPP DEVELOPER</strong></div>
+    <div class="footer__line">Adão Everton Tavares — <a href="mailto:aetm.developer@gmail.com">aetm.developer@gmail.com</a></div>
+  </footer>
+
+  <script src="./app.js"></script>
+</body>
+</html>
